@@ -6,9 +6,10 @@ import codecs
 import glob
 import os
 import re
-import sys
 import shutil
 import subprocess
+import sys
+import warnings
 
 from distutils.version import LooseVersion
 
@@ -84,7 +85,7 @@ except ImportError:
 
 PY2K_DIR = os.path.join("build", "py2k")
 BASE_ARGS_3TO2 = [
-    "-w", "-n", "--no-diffs",
+    "-w", "-n", "--no-diffs", "-x", "bytes",
 ]
 
 if os.name in set(["posix"]):
@@ -241,11 +242,11 @@ def read_description_file(config):
         return ""
     value = []
     for filename in filenames.split():
-        fp = codecs.open(filename, encoding="utf-8")
+        f = codecs.open(filename, encoding="utf-8")
         try:
-            value.append(fp.read())
+            value.append(f.read())
         finally:
-            fp.close()
+            f.close()
     return "\n\n".join(value).strip()
 
 
@@ -467,25 +468,14 @@ def generate_py2k(config, py2k_dir=PY2K_DIR, run_tests=False):
             subprocess.check_call([script])
 
 
-def use_3to2(config):
-    """Setup hook for using 3to2
-    """
-    if sys.version_info[0] < 3:
-        generate_py2k(config)
-        packages_root = get_cfg_value(config, "files", "packages_root")
-        packages_root = os.path.join(PY2K_DIR, packages_root)
-        set_cfg_value(config, "files", "packages_root", packages_root)
-
-
 def load_config(file="setup.cfg"):
     config = RawConfigParser()
     config.optionxform = lambda x: x.lower().replace("_", "-")
-    fp = codecs.open(file, encoding="utf-8")
-    try:
-        config.readfp(fp)
-    finally:
-        fp.close()
+    config.read(file)
+    return config
 
+
+def run_setup_hooks(config):
     for hook_name in get_cfg_value(config, "global", "setup_hooks"):
         module, obj = hook_name.split(".", 1)
         if module == "setup":
@@ -495,13 +485,36 @@ def load_config(file="setup.cfg"):
             func = getattr(module, obj)
         func(config)
 
-    return config
+
+def default_hook(config):
+    """Default setup hook
+    """
+    if any(arg.startswith("install") or arg.startswith("build")
+           for arg in sys.argv):
+        if sys.version_info[0] < 3:
+            generate_py2k(config)
+            packages_root = get_cfg_value(config, "files", "packages_root")
+            packages_root = os.path.join(PY2K_DIR, packages_root)
+            set_cfg_value(config, "files", "packages_root", packages_root)
+    elif "bdist_wininst" in sys.argv:
+        try:
+            description = config["metadata"]["description"]
+        except KeyError:
+            try:
+                import translit
+            except ImportError:
+                warnings.warn("translit package is unavailable")
+            else:
+                description = read_description_file(config)
+                description = translit.downgrade(description)
+                config["metadata"]["description"] = description
 
 
 def main():
     """Running with distutils or setuptools
     """
     config = load_config()
+    run_setup_hooks(config)
     setup(**cfg_to_args(config))
 
 
