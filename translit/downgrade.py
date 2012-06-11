@@ -1,8 +1,10 @@
 from __future__ import print_function
+
 import builtins
 import codecs
 import os
 import sys
+import warnings
 
 try:
     import regex as re
@@ -23,8 +25,8 @@ else:
     try:
         from .iconv import iconv, iconv_str, Error as IConvError
     except (ImportError, OSError) as e:
-        print("iconv error:", e, file=sys.stderr)
         iconv = iconv_str = None
+        warnings.warn("iconv is unavaiable: {}".format(e), ImportWarning)
 
 
 RE_SUBS = {

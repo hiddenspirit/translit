@@ -15,8 +15,8 @@ except ImportError:
 try:
     from . import spell
 except ImportError:
-    warnings.warn("pyenchant is unavaiable", ImportWarning)
     spell = None
+    warnings.warn("pyenchant is unavaiable", ImportWarning)
 
 from . import DEFAULT_ENCODING
 

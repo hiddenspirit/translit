@@ -1,5 +1,7 @@
-from __future__ import print_function
 """Transliterate between Unicode and smaller coded character sets"""
+
+from __future__ import print_function
+
 '''
     © 2012 spirit <hiddenspirit@gmail.com>
     https://bitbucket.org/spirit/translit/
