@@ -15,8 +15,12 @@ def double_quoted_repr(s):
     return '"{}"'.format(s)
 
 
-def main():
+def generate_table_h(overwrite=False):
     data_h_file = os.path.join(SCRIPT_DIR, "table.h")
+
+    if os.path.isfile(data_h_file) and not overwrite:
+        return
+
     max_code_point = None
     max_len = 0
 
@@ -43,4 +47,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(generate_table_h(overwrite=True))

@@ -1,8 +1,13 @@
+from __future__ import print_function
 import builtins
 import codecs
 import os
-import re
 import sys
+
+try:
+    import regex as re
+except ImportError:
+    import re
 
 from . import DEFAULT_ENCODING
 from .unidecode import unidecode
@@ -13,13 +18,13 @@ ICONV_OS_BLACKLIST = [
 ]
 
 if os.name in ICONV_OS_BLACKLIST:
-    iconv_str = None
+    iconv = iconv_str = None
 else:
     try:
-        from .iconv import iconv_str, Error as IConvError
+        from .iconv import iconv, iconv_str, Error as IConvError
     except (ImportError, OSError) as e:
         print("iconv error:", e, file=sys.stderr)
-        iconv_str = None
+        iconv = iconv_str = None
 
 
 RE_SUBS = {
@@ -88,7 +93,8 @@ if iconv_str:
                 except UnicodeEncodeError:
                     # Try iconv before using unidecode.
                     try:
-                        b = iconv_str(c, encoding, "translit")
+                        nc = UNICODE_SUBS.get(c, c)
+                        b = iconv_str(nc, encoding, "translit")
                     except IConvError:
                         repl = unidecode(c)
                     else:

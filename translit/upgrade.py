@@ -1,13 +1,23 @@
 import locale
-import re
 #import unicodedata
 import warnings
-from functools import lru_cache
+
+try:
+    import regex as re
+except ImportError:
+    import re
+
+try:
+    from functools import lru_cache
+except ImportError:
+    lru_cache = None
 
 try:
     from . import spell
 except ImportError:
+    warnings.warn("pyenchant is unavaiable", ImportWarning)
     spell = None
+
 from . import DEFAULT_ENCODING
 
 
@@ -59,7 +69,7 @@ def _upgrade(text: str, language=None) -> str:
     """Try to undo a downgraded transliteration.
     """
     if language is None:
-        language = locale.getlocale()[0]
+        language = locale.getdefaultlocale()[0]
 
     try:
         subs = TRANS_RE_SUBS[language]
@@ -92,9 +102,11 @@ if spell:
                 "dictionary not found for language: {!r}".format(language))
         return text
 
-    @lru_cache(5)
     def get_dict(language=None):
         return spell.Dict(language)
+
+    if lru_cache:
+        get_dict = lru_cache(5)(get_dict)
 
     def fix_spelling(text, language=None):
         return get_dict(language).autofix(text)
