@@ -1,3 +1,4 @@
+from __future__ import print_function
 """Transliterate between Unicode and smaller coded character sets"""
 '''
     © 2012 spirit <hiddenspirit@gmail.com>
@@ -20,7 +21,7 @@
 __all__ = ["downgrade", "upgrade", "print"]
 DEFAULT_ENCODING = "latin-1"
 
-from .downgrade import downgrade, encode, print
+from .downgrade import downgrade, encode, print, iconv, iconv_str
 from .upgrade import upgrade, decode
 from .unidecode import unidecode
 from . import codec
