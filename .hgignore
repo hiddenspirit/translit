@@ -1,0 +1,14 @@
+syntax: glob
+.*
+build/*
+dist/*
+*.egg-info/*
+MANIFEST
+*.pyc
+*.pyo
+*$py.class
+wininst.cmd
+
+_unidecode.c
+_unidecode.pyd
+_unidecode.*.so
