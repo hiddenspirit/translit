@@ -31,7 +31,7 @@ Decoding, the normal way:
 
 Decoding, the upgraded way:
 
->>> buf.decode("latin-1/translit")
+>>> buf.decode("latin-1/translit/fr")
 'La question, c’est\u202f: «\u202fOù est le cœur\u202f?\u202f»'
 
 
