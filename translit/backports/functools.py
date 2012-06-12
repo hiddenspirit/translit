@@ -8,15 +8,17 @@
 #   Copyright (C) 2006-2010 Python Software Foundation.
 # See C source code for _functools credits/copyright
 
+from __future__ import absolute_import
+
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
            'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial']
 
-from _functools import partial, reduce
+from functools import partial, reduce
 from collections import namedtuple
 try:
-    from _thread import allocate_lock as Lock
+    from threading import Lock
 except:
-    from _dummy_thread import allocate_lock as Lock
+    from dummy_threading import Lock
 
 
 ################################################################################
@@ -203,44 +205,36 @@ def lru_cache(maxsize=128, typed=False):
 
     def decorating_function(user_function):
 
-        cache = {}
-        hits = misses = currsize = 0
-        full = False
-        cache_get = cache.get    # bound method to lookup a key or return None
-        lock = Lock()            # because linkedlist updates aren't threadsafe
-        root = []                # root of the circular doubly linked list
-        root[:] = [root, root, None, None]     # initialize by pointing to self
-
         if maxsize == 0:
 
             def wrapper(*args, **kwds):
                 # no caching, just a statistics update after a successful call
-                nonlocal misses
+                #nonlocal misses
                 result = user_function(*args, **kwds)
-                misses += 1
+                wrapper.misses += 1
                 return result
 
         elif maxsize is None:
 
             def wrapper(*args, **kwds):
                 # simple caching without ordering or size limit
-                nonlocal hits, misses, currsize
+                #nonlocal hits, misses, currsize
                 key = make_key(args, kwds, typed)
                 result = cache_get(key, sentinel)
                 if result is not sentinel:
-                    hits += 1
+                    wrapper.hits += 1
                     return result
                 result = user_function(*args, **kwds)
                 cache[key] = result
-                misses += 1
-                currsize += 1
+                wrapper.misses += 1
+                wrapper.currsize += 1
                 return result
 
         else:
 
             def wrapper(*args, **kwds):
                 # size limited caching that tracks accesses by recency
-                nonlocal root, hits, misses, currsize, full
+                #nonlocal root, hits, misses, currsize, full
                 key = make_key(args, kwds, typed)
                 with lock:
                     link = cache_get(key)
@@ -249,11 +243,11 @@ def lru_cache(maxsize=128, typed=False):
                         link_prev, link_next, key, result = link
                         link_prev[NEXT] = link_next
                         link_next[PREV] = link_prev
-                        last = root[PREV]
-                        last[NEXT] = root[PREV] = link
+                        last = wrapper.root[PREV]
+                        last[NEXT] = wrapper.root[PREV] = link
                         link[PREV] = last
-                        link[NEXT] = root
-                        hits += 1
+                        link[NEXT] = wrapper.root
+                        wrapper.hits += 1
                         return result
                 result = user_function(*args, **kwds)
                 with lock:
@@ -263,38 +257,48 @@ def lru_cache(maxsize=128, typed=False):
                         # update is already done, we need only return the
                         # computed result and update the count of misses.
                         pass
-                    elif full:
+                    elif wrapper.full:
                         # use root to store the new key and result
-                        root[KEY] = key
-                        root[RESULT] = result
-                        cache[key] = root
+                        wrapper.root[KEY] = key
+                        wrapper.root[RESULT] = result
+                        cache[key] = wrapper.root
                         # empty the oldest link and make it the new root
-                        root = root[NEXT]
-                        del cache[root[KEY]]
-                        root[KEY] = root[RESULT] = None
+                        wrapper.root = wrapper.root[NEXT]
+                        del cache[wrapper.root[KEY]]
+                        wrapper.root[KEY] = wrapper.root[RESULT] = None
                     else:
                         # put result in a new link at the front of the queue
-                        last = root[PREV]
-                        link = [last, root, key, result]
-                        cache[key] = last[NEXT] = root[PREV] = link
-                        currsize += 1
-                        full = (currsize == maxsize)
-                    misses += 1
+                        last = wrapper.root[PREV]
+                        link = [last, wrapper.root, key, result]
+                        cache[key] = last[NEXT] = wrapper.root[PREV] = link
+                        wrapper.currsize += 1
+                        wrapper.full = (wrapper.currsize == maxsize)
+                    wrapper.misses += 1
                 return result
 
         def cache_info():
             """Report cache statistics"""
             with lock:
-                return _CacheInfo(hits, misses, maxsize, currsize)
+                return _CacheInfo(
+                    wrapper.hits, wrapper.misses, maxsize, wrapper.currsize)
 
         def cache_clear():
             """Clear the cache and cache statistics"""
-            nonlocal hits, misses, currsize, full
+            #nonlocal hits, misses, currsize, full
             with lock:
                 cache.clear()
-                root[:] = [root, root, None, None]
-                hits = misses = currsize = 0
-                full = False
+                wrapper.root[:] = [wrapper.root, wrapper.root, None, None]
+                wrapper.hits = wrapper.misses = wrapper.currsize = 0
+                wrapper.full = False
+
+        cache = {}
+        wrapper.hits = wrapper.misses = wrapper.currsize = 0
+        wrapper.full = False
+        cache_get = cache.get    # bound method to lookup a key or return None
+        lock = Lock()            # because linkedlist updates aren't threadsafe
+        wrapper.root = []        # root of the circular doubly linked list
+        # initialize by pointing to self
+        wrapper.root[:] = [wrapper.root, wrapper.root, None, None]
 
         wrapper.cache_info = cache_info
         wrapper.cache_clear = cache_clear
