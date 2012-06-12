@@ -1,4 +1,4 @@
-Translit – Transliterate between Unicode and smaller coded character sets
+translit – Transliterate between Unicode and smaller coded character sets
 =========================================================================
 
 
