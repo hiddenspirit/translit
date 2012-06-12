@@ -40,7 +40,7 @@ class TestTranslit(unittest.TestCase):
             ("ŒUF Œuf œuf CŒUR Cœur cœur", [
                 Result(
                     "OEUF Oeuf oeuf COEUR Coeur coeur",
-                    "ascii"
+                    "latin-1"
                 ),
                 Result(
                     "ŒUF Œuf œuf CŒUR Cœur cœur",
