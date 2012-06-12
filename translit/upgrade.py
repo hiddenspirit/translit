@@ -85,13 +85,6 @@ def _upgrade(text: str, language=None) -> str:
     return text
 
 
-def decode(buf: bytes, encoding=DEFAULT_ENCODING, language=None) -> str:
-    """Decode and try to undo a downgraded transliteration.
-    """
-    #text = unicodedata.normalize("NFKC", buf.decode(encoding, "replace"))
-    return upgrade(buf.decode(encoding, "replace"), language)
-
-
 if spell:
     def upgrade(text: str, language=None) -> str:
         text = _upgrade(text, language)
@@ -113,3 +106,10 @@ if spell:
 
 else:
     upgrade = _upgrade
+
+
+def decode(buf: bytes, encoding=DEFAULT_ENCODING, language=None) -> str:
+    """Decode and try to undo a downgraded transliteration.
+    """
+    #text = unicodedata.normalize("NFKC", buf.decode(encoding, "replace"))
+    return upgrade(buf.decode(encoding, "replace"), language)
