@@ -27,7 +27,7 @@ b"La question, c'est\xa0: \xab\xa0O\xf9 est le coeur\xa0?\xa0\xbb"
 Decoding, the normal way:
 
 >>> buf.decode("latin-1")
-"La question, c'est\xa0: \xab\xa0O\xf9 est le coeur\xa0?\xa0\xbb"
+"La question, c'est\xa0: «\xa0Où est le coeur\xa0?\xa0»"
 
 Decoding, the upgraded way:
 
