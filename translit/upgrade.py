@@ -60,7 +60,7 @@ TRANS_RE_SUBS = {
 FAILSAFE_LANGUAGE = "en"
 
 
-def _upgrade(text: str, language=None) -> str:
+def upgrade(text: str, language=None) -> str:
     """Try to undo a downgraded transliteration.
     """
     if language is None:
@@ -77,30 +77,23 @@ def _upgrade(text: str, language=None) -> str:
     for pattern, repl in subs:
         text = pattern.sub(repl, text)
 
-    return text
+    return fix_spelling(text, language)
 
 
 if spell:
-    def upgrade(text: str, language=None) -> str:
-        text = _upgrade(text, language)
+    def fix_spelling(text: str, language=None) -> str:
         try:
-            text = fix_spelling(text, language)
+            return get_dict(language).autofix(text)
         except spell.errors.DictNotFoundError:
             warnings.warn(
                 "dictionary not found for language: {!r}".format(language))
-        return text
-
-    upgrade.__doc__ == _upgrade.__doc__
 
     @lru_cache(5)
     def get_dict(language=None):
         return spell.Dict(language)
 
-    def fix_spelling(text, language=None):
-        return get_dict(language).autofix(text)
-
 else:
-    upgrade = _upgrade
+    fix_spelling = lambda text, language=None: text
 
 
 def decode(buf: bytes, encoding=DEFAULT_ENCODING, language=None) -> str:
