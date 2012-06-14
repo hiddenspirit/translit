@@ -2,6 +2,8 @@
 """
 import sys
 import os
+import warnings
+
 from ctypes import (CDLL, CFUNCTYPE, POINTER,
                     create_string_buffer, create_unicode_buffer,
                     get_errno, byref, cast, sizeof, cdll,
@@ -75,6 +77,13 @@ ENCODING_MAP = {
     "utf-32-le": "utf-32le",
 }
 
+UNICODE_TRANS = {
+    8239: '\xa0',
+    8451: '°C',
+    8457: '°F',
+    8470: 'Nº',
+}
+
 
 class Error(OSError):
     def __init__(self):
@@ -92,9 +101,11 @@ class Error(OSError):
 
 def iconv(buf: bytes, to_code=DEFAULT_TO_CODE, to_suffix=None,
           from_code="utf-8") -> bytes:
+    """Perform character set conversion from bytes to bytes.
+    """
     to_code = ENCODING_MAP.get(to_code, to_code)
     from_code = ENCODING_MAP.get(from_code, from_code)
-    if to_suffix:   # "translit" or "ignore"
+    if to_suffix:  # "translit" or "ignore"
         to_code += "//" + to_suffix
     cd = _iconv_open(to_code.encode(), from_code.encode())
     if cd == -1:
@@ -117,8 +128,10 @@ def iconv(buf: bytes, to_code=DEFAULT_TO_CODE, to_suffix=None,
 
 
 def iconv_str(text: str, to_code=DEFAULT_TO_CODE, to_suffix=None) -> bytes:
+    """Perform character set conversion from str to bytes.
+    """
     to_code = ENCODING_MAP.get(to_code, to_code)
-    if to_suffix:   # 'translit' or 'ignore'
+    if to_suffix:
         to_code += "//" + to_suffix
     cd = _iconv_open(to_code.encode(), b"wchar_t")
     if cd == -1:
@@ -141,7 +154,7 @@ def iconv_str(text: str, to_code=DEFAULT_TO_CODE, to_suffix=None) -> bytes:
 
 
 def declare_libiconv_funcs():
-    global _iconv_open, _iconv, _iconv_close
+    global _iconv_open, _iconv, _iconv_close, iconv, iconv_str
 
     if os.name == "nt":
         base_dirs = [os.path.dirname(sys.argv[0])]
@@ -150,18 +163,19 @@ def declare_libiconv_funcs():
             base_dirs.append(os.path.dirname(script_path))
         except NameError:
             pass
-        dll_names = ["libiconv2.dll", "libiconv-2.dll", "libiconv.dll"]
+        dll_names = ["libiconv-2.dll", "libiconv2.dll", "libiconv.dll",
+                     "iconv.dll"]
         lib = None
         for base_dir in base_dirs:
             for dll_name in dll_names:
-                p = os.path.join(base_dir, dll_name)
-                if not os.path.isfile(p):
-                    p = find_library(dll_name)
-                if p:
+                lib_path = os.path.join(base_dir, dll_name)
+                if not os.path.isfile(lib_path):
+                    lib_path = find_library(dll_name)
+                if lib_path:
                     cwd = os.getcwd()
-                    os.chdir(base_dir)
+                    os.chdir(base_dir or ".")
                     try:
-                        lib = CDLL(p, use_errno=True)
+                        lib = CDLL(lib_path, use_errno=True)
                     finally:
                         os.chdir(cwd)
                     break
@@ -173,14 +187,16 @@ def declare_libiconv_funcs():
         libiconv_open = lib.libiconv_open
         libiconv = lib.libiconv
         libiconv_close = lib.libiconv_close
+        test_features = True
     else:
-        p = find_library("c")
-        if not p:
+        lib_path = find_library("c")
+        if not lib_path:
             raise OSError("can’t find libiconv")
-        lib = CDLL(p, use_errno=True)
+        lib = CDLL(lib_path, use_errno=True)
         libiconv_open = lib.iconv_open
         libiconv = lib.iconv
         libiconv_close = lib.iconv_close
+        test_features = False
 
     # iconv_t iconv_open (const char* tocode, const char* fromcode);
     p = CFUNCTYPE(c_ssize_t, c_char_p, c_char_p)
@@ -197,6 +213,48 @@ def declare_libiconv_funcs():
     # int iconv_close (iconv_t cd);
     p = CFUNCTYPE(c_int, c_ssize_t)
     _iconv_close = p(libiconv_close)
+
+    if test_features:
+        orig_iconv = iconv
+        orig_iconv_str = iconv_str
+
+        # Test wchar_t support.
+        try:
+            iconv_str("")
+        except Error:
+            warnings.warn("{} doesn’t support wchar_t.".format(lib_path))
+
+            def iconv(buf: bytes, to_code=DEFAULT_TO_CODE, to_suffix=None,
+                      from_code="utf-8") -> bytes:
+                return iconv_str(buf.decode(from_code), to_code, to_suffix)
+
+            def iconv_str(text: str, to_code=DEFAULT_TO_CODE, to_suffix=None) \
+                    -> bytes:
+                text = text.translate(UNICODE_TRANS)
+                return orig_iconv(text.encode("utf-8"), to_code, to_suffix)
+
+            iconv.__doc__ = orig_iconv.__doc__
+            iconv_str.__doc__ = orig_iconv_str.__doc__
+
+        else:
+            # Test Unicode 3+ support.
+            try:
+                iconv_str("\u202f", to_suffix="translit")
+            except Error:
+                warnings.warn(
+                    "{} doesn’t support Unicode 3+.".format(lib_path))
+
+                def iconv(buf: bytes, to_code=DEFAULT_TO_CODE, to_suffix=None,
+                          from_code="utf-8") -> bytes:
+                    return iconv_str(buf.decode(from_code), to_code, to_suffix)
+
+                def iconv_str(text: str, to_code=DEFAULT_TO_CODE,
+                              to_suffix=None) -> bytes:
+                    text = text.translate(UNICODE_TRANS)
+                    return orig_iconv_str(text, to_code, to_suffix)
+
+                iconv.__doc__ = orig_iconv.__doc__
+                iconv_str.__doc__ = orig_iconv_str.__doc__
 
 
 declare_libiconv_funcs()
