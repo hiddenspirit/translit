@@ -96,7 +96,8 @@ else:
     fix_spelling = lambda text, language=None: text
 
 
-def decode(buf: bytes, encoding=DEFAULT_ENCODING, language=None) -> str:
-    """Decode and try to undo a downgraded transliteration.
-    """
-    return upgrade(buf.decode(encoding, "replace"), language)
+def decode_factory(encoding, language=None):
+    def func(input, errors="strict"): #@ReservedAssignment
+        buf = bytes(input)
+        return upgrade(buf.decode(encoding, errors), language), len(buf)
+    return func

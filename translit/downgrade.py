@@ -117,10 +117,10 @@ else:
         return "".join(result)
 
 
-def encode(text: str, encoding=DEFAULT_ENCODING) -> bytes:
-    """Encode text into a transliterated form.
-    """
-    return downgrade(text, encoding).encode(encoding)
+def encode_factory(encoding):
+    def func(input, errors="strict"): #@ReservedAssignment
+        return downgrade(input, encoding).encode(encoding, errors), len(input)
+    return func
 
 
 def print(*args, sep=" ", end="\n", file=sys.stdout): #@ReservedAssignment

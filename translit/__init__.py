@@ -20,8 +20,8 @@ from __future__ import print_function
 
 DEFAULT_ENCODING = "latin-1"
 
-from .downgrade import downgrade, encode, print, iconv, iconv_str
-from .upgrade import upgrade, decode
+from .downgrade import downgrade, print, iconv, iconv_str
+from .upgrade import upgrade
 from .unidecode import unidecode
 from . import codec
 

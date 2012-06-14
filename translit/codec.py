@@ -1,20 +1,7 @@
 import codecs
 
-from .downgrade import downgrade
-from .upgrade import upgrade
-
-
-def encode_factory(encoding):
-    def func(input, errors="strict"): #@ReservedAssignment
-        return downgrade(input, encoding).encode(encoding, errors), len(input)
-    return func
-
-
-def decode_factory(encoding, language=None):
-    def func(input, errors="strict"): #@ReservedAssignment
-        buf = bytes(input)
-        return upgrade(buf.decode(encoding, errors), language), len(buf)
-    return func
+from .downgrade import encode_factory
+from .upgrade import decode_factory
 
 
 def search_function(encoding):
