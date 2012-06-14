@@ -11,9 +11,9 @@ from . import DEFAULT_ENCODING
 from .unidecode import unidecode
 
 
-ICONV_OS_BLACKLIST = [
+ICONV_OS_BLACKLIST = {
     "nt",
-]
+}
 
 if os.name in ICONV_OS_BLACKLIST:
     iconv = iconv_str = None

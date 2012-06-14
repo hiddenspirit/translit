@@ -90,6 +90,8 @@ if spell:
                 "dictionary not found for language: {!r}".format(language))
         return text
 
+    upgrade.__doc__ == _upgrade.__doc__
+
     @lru_cache(5)
     def get_dict(language=None):
         return spell.Dict(language)

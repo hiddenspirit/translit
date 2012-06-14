@@ -12,3 +12,4 @@ MANIFEST
 _unidecode.c
 _unidecode.pyd
 _unidecode.*.so
+*iconv*.dll
