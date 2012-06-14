@@ -13,8 +13,6 @@ except ImportError:
     spell = None
     warnings.warn("pyenchant is unavaiable", ImportWarning)
 
-from . import DEFAULT_ENCODING
-
 
 TRANS_RE_SUBS = {
     "en": [
