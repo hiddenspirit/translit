@@ -7,9 +7,10 @@ import re
 import sys
 import warnings
 
-from . import DEFAULT_ENCODING
 from .unidecode import unidecode
 
+
+DEFAULT_ENCODING = "latin-1"
 
 ICONV_OS_BLACKLIST = {
     "nt",
@@ -67,6 +68,9 @@ if iconv_str:
     def _downgrade(text, encoding):
         result = []
         for c in text:
+            if c < "\x80":
+                result.append(c)
+                continue
             try:
                 repl = downgrade_cache[c, encoding]
             except KeyError:
@@ -93,6 +97,9 @@ else:
     def _downgrade(text, encoding):
         result = []
         for c in text:
+            if c < "\x80":
+                result.append(c)
+                continue
             try:
                 repl = downgrade_cache[c, encoding]
             except KeyError:
