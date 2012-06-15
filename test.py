@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import unittest
 from collections import namedtuple
 
@@ -46,6 +47,9 @@ class TestTranslit(unittest.TestCase):
                     "ŒUF Œuf œuf CŒUR Cœur cœur",
                     "iso8859-15"
                 ),
+            ]),
+            ("37.0\xa0℃", [
+                Result("37.0\xa0°C", "latin-1"),
             ]),
         ],
     }

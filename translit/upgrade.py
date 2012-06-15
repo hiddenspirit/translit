@@ -31,6 +31,8 @@ TRANS_RE_SUBS = {
         (re.compile(r"(\d|\b)EUR(\d|\b)", re.U), r"\1€\2"),
         (re.compile(r"(\d|\b)GBP(\d|\b)", re.U), r"\1£\2"),
         (re.compile(r"(\d|\b)JPY(\d|\b)", re.U), r"\1¥\2"),
+        (re.compile(r"°C"), r"℃"),
+        (re.compile(r"°F"), r"℉"),
     ],
     "fr": [
         (re.compile(r"(?<!\w)'([\w\s,.'’]+?)'(?!\w)", re.U), r"‘\1’"),
@@ -50,11 +52,14 @@ TRANS_RE_SUBS = {
         (re.compile(r"(\d|\b)EUR(\d|\b)", re.U), r"\1€\2"),
         (re.compile(r"(\d|\b)GBP(\d|\b)", re.U), r"\1£\2"),
         (re.compile(r"(\d|\b)JPY(\d|\b)", re.U), r"\1¥\2"),
-        (re.compile(r"\b(n)[o0°]\s*(\d)", re.U | re.I), "\\1º\xa0\\2"),
+        (re.compile(r"\b(n)[o°]\s*(\d)", re.U | re.I), "\\1º\xa0\\2"),
         (re.compile(r"oe(u|il)"), r"œ\1"),
         (re.compile(r"O(e|E)(u|U|il|IL)"), r"Œ\2"),
+        (re.compile(r"°C"), r"℃"),
+        (re.compile(r"°F"), r"℉"),
     ],
 }
+
 FAILSAFE_LANGUAGE = "en"
 
 
