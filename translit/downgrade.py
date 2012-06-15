@@ -76,9 +76,9 @@ def _downgrade(text, encoding):
             try:
                 c.encode(encoding)
             except UnicodeEncodeError:
-                nc = UNICODE_SUBS.get(c, c)
+                repl = None
                 if iconv_str:
-                    repl = None
+                    nc = UNICODE_SUBS.get(c, c)
                     # Try iconv before using unidecode.
                     try:
                         # TODO: Investigate why iconv from Python 2
@@ -89,15 +89,16 @@ def _downgrade(text, encoding):
                     else:
                         if not b"?" in b:
                             repl = b.decode(encoding)
-                    if repl is None:
-                        repl = unidecode(c)
-                else:
+                elif c in UNICODE_SUBS:
+                    nc = UNICODE_SUBS[c]
                     try:
                         nc.encode(encoding)
                     except UnicodeEncodeError:
-                        repl = unidecode(c)
+                        pass
                     else:
                         repl = nc
+                if repl is None:
+                    repl = unidecode(c)
             else:
                 repl = c
             downgrade_cache[c, encoding] = repl
