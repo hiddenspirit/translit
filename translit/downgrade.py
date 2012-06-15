@@ -64,64 +64,45 @@ def downgrade(text: str, encoding=DEFAULT_ENCODING) -> str:
     return _downgrade(text, encoding)
 
 
-if iconv_str:
-    def _downgrade(text, encoding):
-        result = []
-        for c in text:
-            if c < "\x80":
-                result.append(c)
-                continue
+def _downgrade(text, encoding):
+    result = []
+    for c in text:
+        if c < "\x80":
+            result.append(c)
+            continue
+        try:
+            repl = downgrade_cache[c, encoding]
+        except KeyError:
             try:
-                repl = downgrade_cache[c, encoding]
-            except KeyError:
-                try:
-                    c.encode(encoding)
-                except UnicodeEncodeError:
+                c.encode(encoding)
+            except UnicodeEncodeError:
+                nc = UNICODE_SUBS.get(c, c)
+                if iconv_str:
+                    repl = None
                     # Try iconv before using unidecode.
                     try:
                         # TODO: Investigate why iconv from Python 2
                         # behaves differently from Python 3 with \u202f.
-                        nc = UNICODE_SUBS.get(c, c)
                         b = iconv_str(nc, encoding, "translit")
                     except IConvError:
-                        repl = unidecode(c)
+                        pass
                     else:
-                        repl = (unidecode(c) if b"?" in b else
-                                b.decode(encoding))
-                else:
-                    repl = c
-                downgrade_cache[c, encoding] = repl
-            result.append(repl)
-        return "".join(result)
-else:
-    def _downgrade(text, encoding):
-        result = []
-        for c in text:
-            if c < "\x80":
-                result.append(c)
-                continue
-            try:
-                repl = downgrade_cache[c, encoding]
-            except KeyError:
-                try:
-                    c.encode(encoding)
-                except UnicodeEncodeError:
-                    if c in UNICODE_SUBS:
-                        nc = UNICODE_SUBS[c]
-                        try:
-                            nc.encode(encoding)
-                        except UnicodeEncodeError:
-                            # Use only unidecode.
-                            repl = unidecode(c)
-                        else:
-                            repl = nc
-                    else:
+                        if not b"?" in b:
+                            repl = b.decode(encoding)
+                    if repl is None:
                         repl = unidecode(c)
                 else:
-                    repl = c
-                downgrade_cache[c, encoding] = repl
-            result.append(repl)
-        return "".join(result)
+                    try:
+                        nc.encode(encoding)
+                    except UnicodeEncodeError:
+                        repl = unidecode(c)
+                    else:
+                        repl = nc
+            else:
+                repl = c
+            downgrade_cache[c, encoding] = repl
+        result.append(repl)
+    return "".join(result)
 
 
 def encode_factory(encoding):
@@ -138,3 +119,8 @@ def print(*args, sep=" ", end="\n", file=sys.stdout): #@ReservedAssignment
         if not encoding.startswith("utf"):
             args = (downgrade(str(arg), encoding) for arg in args)
     builtins.print(*args, sep=sep, end=end, file=file)
+
+
+def purge():
+    needs_substitution_cache.clear()
+    downgrade_cache.clear()
