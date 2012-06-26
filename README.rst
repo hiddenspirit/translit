@@ -35,7 +35,21 @@ Decoding, the upgraded way:
 'La question, c’est\u202f: «\u202fOù est le cœur\u202f?\u202f»'
 
 
+Installation
+------------
+
+You can use `pip <http://www.pip-installer.org>`_ to install or uninstall::
+
+  $ pip install translit
+
+On Windows, you can use one of the MSI binary packages provided
+on the `download page
+<https://bitbucket.org/spirit/translit/downloads>`_.
+
+
 Requirements
 ------------
 
-- `PyEnchant <http://packages.python.org/pyenchant/>`_
+- `Python 3.2+ <http://www.python.org>`_
+  (or 2.7, using `lib3to2 <https://bitbucket.org/amentajo/lib3to2>`_)
+- `PyEnchant <http://packages.python.org/pyenchant>`_
