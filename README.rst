@@ -38,13 +38,12 @@ Decoding, the upgraded way:
 Installation
 ------------
 
-You can use the setup script::
+You can use the ``setup.py`` script::
 
   $ ./setup.py install
 
-On Windows, you can use one of the MSI binary packages provided
-on the `download page
-<https://bitbucket.org/spirit/translit/downloads>`_.
+On Windows, you can use one of the MSI binary packages provided on the
+`download page <https://bitbucket.org/spirit/translit/downloads>`_.
 
 
 Requirements
